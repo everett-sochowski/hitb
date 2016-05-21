@@ -123,12 +123,15 @@ object WorkQueue {
       s"Pi is more or less $avg"
     }
 
+    addJob(JavaScripts.leftPad(s"hello", 8), None, ReturnString)
+
     addAggregateJob(ReturnOptionalDouble, primeReducer _, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
 
     addAggregateJob(ReturnDouble, piReducer _, Seq.fill(10)(JavaScripts.estimatePI): _*)
 
 
     for (i <- 1 to 100) {
+      addJob(JavaScripts.leftPad(s"hello_$i", 8), None, ReturnString)
       addJob(JavaScripts.estimatePI, None, ReturnDouble)
     }
   }
@@ -184,5 +187,47 @@ object JavaScripts {
       |console.log("Calculation finished");
       |next;
     """.stripMargin
+
+  def leftPad(str: String, len: Int, char: Option[Char] = None) =
+    s"""var cache = [
+       |  '',
+       |  ' ',
+       |  '  ',
+       |  '   ',
+       |  '    ',
+       |  '     ',
+       |  '      ',
+       |  '       ',
+       |  '        ',
+       |  '         '
+       |];
+       |
+       |function leftPad (str, len, ch) {
+       |  // convert `str` to `string`
+       |  str = str + '';
+       |
+       |  // doesn't need to pad
+       |  len = len - str.length;
+       |  if (len <= 0) return str;
+       |
+       |  // convert `ch` to `string`
+       |  if (!ch && ch !== 0) ch = ' ';
+       |  ch = ch + '';
+       |  if (ch === ' ' && len < 10) return cache[len] + str;
+       |  var pad = '';
+       |  while (true) {
+       |    if (len & 1) pad += ch;
+       |    len >>= 1;
+       |    if (len) ch += ch;
+       |    else break;
+       |  }
+       |  return pad + str;
+       |}
+       |
+       |console.log("Calculation Started -- Left pad");
+       |var padded = ${char.fold(s"leftPad('$str', $len);")(c => s"leftPad('$str', $len, '$char');")}
+       |console.log("Calculation finished: " + padded);
+       |padded
+     """.stripMargin
 }
 

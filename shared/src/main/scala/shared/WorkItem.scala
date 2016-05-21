@@ -3,6 +3,7 @@ package shared
 sealed trait WorkItemReturnType
 case object ReturnDouble extends WorkItemReturnType
 case object ReturnOptionalDouble extends WorkItemReturnType
+case object ReturnString extends WorkItemReturnType
 
 case class AggregateJob[T](id: AggregateJobId, reduce: Seq[T] => String)
 
@@ -34,6 +35,11 @@ case class DoubleResult(
 case class OptionalDoubleResult(
   id: JobID,
   value: Option[Double]
+) extends Result
+
+case class StringResult(
+  id: JobID,
+  value: String
 ) extends Result
 
 case class JobID(value: Long) extends AnyVal

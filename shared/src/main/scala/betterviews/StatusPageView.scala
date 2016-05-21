@@ -47,6 +47,8 @@ object StatusPageView {
     case OptionalDoubleResult(id, value) =>
       val formattedValue = value.fold("No result found")(_.toString)
       s"Job ${id.value}: $formattedValue"
+    case StringResult(id, value) =>
+      s"Job ${id.value}: $value"
   }
 }
 
