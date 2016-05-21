@@ -15,7 +15,10 @@ object Worker extends js.JSApp {
   def main(): Unit = {
     println("in scalajs worker")
 
-    this.processNextWorkItem()
+    self.onmessage = { _: scala.scalajs.js.Any =>
+      // start off worker
+      this.processNextWorkItem()
+    }
   }
 
   private def processNextWorkItem() = {
@@ -34,6 +37,7 @@ object Worker extends js.JSApp {
 
   private def postDoubleResult(workItem: WorkItem, computationResult: Double) = {
     val result = DoubleResult(workItem.id, computationResult)
+    self.postMessage(result.asInstanceOf[scala.scalajs.js.Any])
     Ajax.post("/postResult", write(result))
   }
 }
