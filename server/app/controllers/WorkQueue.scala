@@ -6,6 +6,7 @@ object WorkQueue {
   private val workItems = new collection.mutable.Queue[WorkItem]
   private var pendingJobs = Map.empty[JobID, WorkItem]
   private var results = Seq.empty[Result]
+  private var jobCount = 0L
 
   createMockJobs()
 
@@ -16,8 +17,11 @@ object WorkQueue {
     workItem
   }
 
-  def addJob(jobID: JobID, jsCode: String): Unit = synchronized {
-    workItems.enqueue(WorkItem(jobID, jsCode))
+  def addJob(jsCode: String): JobID = synchronized {
+    val id = JobID(jobCount)
+    jobCount += 1
+    workItems.enqueue(WorkItem(id, jsCode))
+    id
   }
 
   def completeJob(result: Result): Unit = synchronized {
@@ -36,7 +40,7 @@ object WorkQueue {
 
   private def createMockJobs(): Unit = {
     for (i <- 1 to 100) {
-      addJob(JobID(i), JavaScripts.estimatePI)
+      addJob(JavaScripts.estimatePI)
     }
   }
 }

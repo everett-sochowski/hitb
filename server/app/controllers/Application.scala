@@ -29,5 +29,11 @@ class Application()(implicit environment: Environment) extends Controller {
     WorkQueue.completeJob(result)
     Ok
   }
+
+  def createJob = Action { implicit request =>
+      val jsCode = request.body.asText.get
+      WorkQueue.addJob(jsCode)
+      Ok
+  }
 }
 
