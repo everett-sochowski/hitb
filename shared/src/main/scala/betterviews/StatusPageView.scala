@@ -16,6 +16,7 @@ object StatusPageView {
       display:="flex",
       div(
         flexGrow:="1",
+        flexBasis:="0",
         h2("Overview"),
         "Unassigned work items: ", status.workItems, br,
         "Pending jobs: ", status.pendingJobs, br,
@@ -24,14 +25,19 @@ object StatusPageView {
       ),
       div(
         flexGrow:="1",
+        flexBasis:="0",
         h2("Aggregate Jobs"),
         p(
-          for (AggregateJobStatus(id, completed, pending) <- status.pendingAggregateJobs)
-            yield Seq[Modifier](s"Aggregate Job ${id.value}: [$completed/${completed + pending}]", br)
+          for (AggregateJobStatus(id, completed, pending, result) <- status.pendingAggregateJobs)
+            yield p(
+              strong(s"Aggregate Job ${id.value}: "), s"[$completed/${completed + pending}]",
+              result.map(r => Seq[Modifier](br, r))
+            )
         )
       ),
       div(
         flexGrow:="1",
+        flexBasis:="0",
         h2("Recent Results"),
         p(
           for (result <- status.results.takeRight(20).reverse)

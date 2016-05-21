@@ -12,5 +12,6 @@ case class JobsStatus(
 case class AggregateJobStatus(
   id: AggregateJobId,
   completed: Int,
-  pending: Int
+  pending: Int,
+  result: Option[String]
 )

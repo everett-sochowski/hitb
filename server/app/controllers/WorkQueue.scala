@@ -12,7 +12,8 @@ object WorkQueue {
   private var pendingJobs = Map.empty[JobID, PendingJob[_]]
   private var pendingAggregateJobs = Map.empty[AggregateJob[_], Set[JobID]]
   private var results = Seq.empty[Result]
-  private var aggregateJobResults = new TypedMap()
+  private val aggregateJobResults = new TypedMap()
+  private var aggregateResults = Map.empty[AggregateJob[_], String]
   private var jobCount = 0L
   private var failedJobs = 0
 
@@ -78,7 +79,9 @@ object WorkQueue {
 
   private def completeAggregateJob[T](job: AggregateJob[T]) = synchronized {
     val subResults = aggregateJobResults.get(job)
-    println(s"Aggregate job ${job.id} completed. Results = " + job.reduce(subResults))
+    val result = job.reduce(subResults)
+    aggregateResults += job -> result
+    println(s"Aggregate job ${job.id} completed. Results = $result")
   }
 
   def status = JobsStatus(
@@ -88,7 +91,8 @@ object WorkQueue {
       (aggregateJob, pending) <- pendingAggregateJobs.toSeq
       nPending = pending.size
       nCompleted = aggregateJobResults.get(aggregateJob).size
-    } yield AggregateJobStatus(aggregateJob.id, nCompleted, nPending),
+      result = aggregateResults.get(aggregateJob)
+    } yield AggregateJobStatus(aggregateJob.id, nCompleted, nPending, result),
     failedJobs,
     results
   )
@@ -123,12 +127,13 @@ object WorkQueue {
       s"Pi is more or less $avg"
     }
 
-    addAggregateJob(ReturnOptionalDouble, primeReducer _, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
+    addAggregateJob(ReturnOptionalDouble, primeReducer, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
 
-    addAggregateJob(ReturnDouble, piReducer _, Seq.fill(10)(JavaScripts.estimatePI): _*)
+    addAggregateJob(ReturnDouble, piReducer, Seq.fill(10)(JavaScripts.estimatePI): _*)
+    addAggregateJob(ReturnDouble, piReducer, Seq.fill(50)(JavaScripts.estimatePI): _*)
+    addAggregateJob(ReturnDouble, piReducer, Seq.fill(250)(JavaScripts.estimatePI): _*)
 
-
-    for (i <- 1 to 100) {
+    for (i <- 1 to 50) {
       addJob(JavaScripts.estimatePI, None, ReturnDouble)
     }
   }
