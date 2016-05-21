@@ -6,7 +6,7 @@ import betterviews.{IndexView, StatusPageView}
 import play.api.Environment
 import play.api.http.HttpEntity
 import play.api.mvc._
-import shared.{Functions, Result, ReturnDouble}
+import shared.{Result, ReturnDouble}
 import upickle.default._
 
 class Application()(implicit environment: Environment) extends Controller {
