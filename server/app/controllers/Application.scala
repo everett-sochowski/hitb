@@ -30,6 +30,11 @@ class Application()(implicit environment: Environment) extends Controller {
     }
   }
 
+  def leftPad(str: String, len: Int) = Action.async {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    WorkQueue.runLeftPad(str, len).map(result => Ok(s"{your left padded string: $result}").as("application/json"))
+  }
+
   def statusPage = Action {
     Ok(StatusPageView.dynamic()).as("text/html")
   }

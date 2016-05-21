@@ -5,6 +5,8 @@ import org.joda.time.{DateTime, Interval}
 import shared.Shared.JsCode
 import shared.{JobID, JobsStatus, Result, WorkItem}
 
+import scala.concurrent.{Future, Promise}
+
 object WorkQueue {
   val DefaultTimeoutMillis = 10000
 
@@ -38,9 +40,9 @@ object WorkQueue {
     workItem
   }
 
-  def addAggregateJob[T](returnType: WorkItemReturnType, reduce: Seq[T] => String, subJobs: JsCode*): AggregateJobId = synchronized {
+  def addAggregateJob[T](returnType: WorkItemReturnType, reduce: Seq[T] => String, onComplete: Option[Seq[T] => Unit], subJobs: JsCode*): AggregateJobId = synchronized {
     val aggregateJobId = AggregateJobId(jobCount)
-    val aggregateJob = AggregateJob(aggregateJobId, reduce)
+    val aggregateJob = AggregateJob(aggregateJobId, reduce, onComplete)
     jobCount += 1
     val subJobIds = subJobs.map(addJob(_, Some(aggregateJob), returnType))
     pendingAggregateJobs += aggregateJob -> subJobIds.toSet
@@ -52,6 +54,16 @@ object WorkQueue {
     jobCount += 1
     workItems.enqueue(WorkItem(id, parent, jsCode, returnType))
     id
+  }
+
+  //hackity hack
+  def runLeftPad(str: String, len: Int): Future[String] = {
+    val promise = Promise[String]
+    val onComplete = (strs : Seq[StringResult]) => {
+      promise.trySuccess(strs.head.value) : Unit
+    }
+    addAggregateJob[StringResult](ReturnString, strs => strs.head.value, Some(onComplete), JavaScripts.leftPad(str, len))
+    promise.future
   }
 
   def completeJob(result: Result): Unit = synchronized {
@@ -82,6 +94,7 @@ object WorkQueue {
   private def completeAggregateJob[T](job: AggregateJob[T]) = synchronized {
     val subResults = aggregateJobResults.get(job)
     val result = job.reduce(subResults)
+    job.onComplete.foreach(complete => complete(subResults))
     aggregateResults += job -> result
     println(s"Aggregate job ${job.id} completed. Results = $result")
   }
@@ -128,11 +141,11 @@ object WorkQueue {
 
     addJob(JavaScripts.leftPad(s"hello", 8), None, ReturnString)
 
-    addAggregateJob(ReturnOptionalDouble, primeReducer _, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
+    addAggregateJob(ReturnOptionalDouble, primeReducer _, None, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
 
-    addAggregateJob(ReturnDouble, piReducer, Seq.fill(10)(JavaScripts.estimatePI): _*)
-    addAggregateJob(ReturnDouble, piReducer, Seq.fill(50)(JavaScripts.estimatePI): _*)
-    addAggregateJob(ReturnDouble, piReducer, Seq.fill(250)(JavaScripts.estimatePI): _*)
+    addAggregateJob(ReturnDouble, piReducer, None, Seq.fill(10)(JavaScripts.estimatePI): _*)
+    addAggregateJob(ReturnDouble, piReducer, None, Seq.fill(50)(JavaScripts.estimatePI): _*)
+    addAggregateJob(ReturnDouble, piReducer, None, Seq.fill(250)(JavaScripts.estimatePI): _*)
 
     for (i <- 1 to 50) {
       addJob(JavaScripts.leftPad(s"hello_$i", 8), None, ReturnString)

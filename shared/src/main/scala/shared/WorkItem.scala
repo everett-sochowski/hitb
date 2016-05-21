@@ -5,7 +5,7 @@ case object ReturnDouble extends WorkItemReturnType
 case object ReturnOptionalDouble extends WorkItemReturnType
 case object ReturnString extends WorkItemReturnType
 
-case class AggregateJob[T](id: AggregateJobId, reduce: Seq[T] => String)
+case class AggregateJob[T](id: AggregateJobId, reduce: Seq[T] => String, onComplete: Option[Seq[T] => Unit])
 
 case class WorkItem[T](
   id: JobID,
