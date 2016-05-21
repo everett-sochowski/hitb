@@ -1,19 +1,25 @@
 package controllers
 
 import shared._
+import org.joda.time.{Interval, DateTime}
+import shared.{JobsStatus, Result, JobID, WorkItem}
 
 object WorkQueue {
+  val DefaultTimeoutMillis = 5000
+
   private val workItems = new collection.mutable.Queue[WorkItem]
-  private var pendingJobs = Map.empty[JobID, WorkItem]
+  private var pendingJobs = Map.empty[JobID, PendingJob]
   private var results = Seq.empty[Result]
   private var jobCount = 0L
+  private var failedJobs = 0
 
   createMockJobs()
 
 
   def dequeue(): WorkItem = synchronized {
+    Scheduler.run()
     val workItem = workItems.dequeue()
-    pendingJobs += ((workItem.id, workItem))
+    pendingJobs += workItem.id -> PendingJob(workItem, new DateTime)
     workItem
   }
 
@@ -35,8 +41,25 @@ object WorkQueue {
   def status = JobsStatus(
     workItems.size,
     pendingJobs.size,
+    failedJobs,
     results
   )
+
+  def tick(): Unit = {
+    val timeNow = new DateTime
+    val requireRestart =
+      for {
+        pending <- pendingJobs.values
+        elapsedMs = new Interval(pending.startTime, timeNow).toDurationMillis
+        if elapsedMs >= DefaultTimeoutMillis
+      } yield pending
+
+    for (PendingJob(workItem, _) <- requireRestart) {
+      pendingJobs -= workItem.id
+      workItems.enqueue(workItem)
+      failedJobs += 1
+    }
+  }
 
   private def createMockJobs(): Unit = {
     addJob(JavaScripts.nextPrimeFinder(101918, 101920), ReturnOptionalDouble) //no primes in this range
@@ -46,6 +69,11 @@ object WorkQueue {
     }
   }
 }
+
+case class PendingJob(
+  jobDefinition: WorkItem,
+  startTime: DateTime
+)
 
 object JavaScripts {
 

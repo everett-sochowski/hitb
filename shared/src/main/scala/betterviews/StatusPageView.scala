@@ -22,6 +22,7 @@ object StatusPageView {
     h1("Status"),
     "Unassigned work items: ", status.workItems, br,
     "Pending jobs: ", status.pendingJobs, br,
+    "Failed jobs: ", status.failedJobs, br,
     "Completed jobs: ", status.results.size,
     h2("Results"),
     p(
