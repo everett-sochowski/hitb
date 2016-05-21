@@ -4,12 +4,23 @@ sealed trait WorkItemReturnType
 case object ReturnDouble extends WorkItemReturnType
 case object ReturnOptionalDouble extends WorkItemReturnType
 
-case class WorkItem(
+case class AggregateJob[T](id: AggregateJobId, reduce: Seq[T] => String)
+
+case class WorkItem[T](
   id: JobID,
-  parent: Option[AggregateJobId],
+  parent: Option[AggregateJob[T]],
+  jsCode: String,
+  returnType: WorkItemReturnType
+) {
+  def data = WorkItemData(id, jsCode, returnType)
+}
+
+case class WorkItemData(
+  id: JobID,
   jsCode: String,
   returnType: WorkItemReturnType
 )
+
 
 sealed trait Result {
   val id: JobID

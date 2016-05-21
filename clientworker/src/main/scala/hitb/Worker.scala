@@ -27,7 +27,7 @@ object Worker extends js.JSApp {
 
         xhr.status match {
           case HttpCodes.OK => {
-            val workItem = read[WorkItem](xhr.responseText)
+            val workItem = read[WorkItemData](xhr.responseText)
 
             val computationResult = js.eval(workItem.jsCode)
 

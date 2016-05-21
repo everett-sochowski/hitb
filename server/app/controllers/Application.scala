@@ -19,7 +19,7 @@ class Application()(implicit environment: Environment) extends Controller {
   def getWorkItem = Action {
     try {
       val workItem = WorkQueue.dequeue()
-      Ok(write(workItem)).as("application/json")
+      Ok(write(workItem.data)).as("application/json")
     } catch {
       case e: NoSuchElementException => {
         Result(

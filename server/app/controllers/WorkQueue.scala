@@ -8,33 +8,45 @@ import shared.{JobID, JobsStatus, Result, WorkItem}
 object WorkQueue {
   val DefaultTimeoutMillis = 20000
 
-  private val workItems = new collection.mutable.Queue[WorkItem]
-  private var pendingJobs = Map.empty[JobID, PendingJob]
-  private var pendingAggregateJobs = Map.empty[AggregateJobId, Set[JobID]]
+  private val workItems = new collection.mutable.Queue[WorkItem[_]]
+  private var pendingJobs = Map.empty[JobID, PendingJob[_]]
+  private var pendingAggregateJobs = Map.empty[AggregateJob[_], Set[JobID]]
   private var results = Seq.empty[Result]
-  private var aggregateJobResults = Map.empty[AggregateJobId, Seq[Result]]
+  private var aggregateJobResults = new TypedMap()
   private var jobCount = 0L
   private var failedJobs = 0
 
   createMockJobs()
 
+  class TypedMap {
+    private var mapping = Map.empty[AggregateJob[_], Any]
 
-  def dequeue(): WorkItem = synchronized {
+    def insert[T](key: AggregateJob[T], t: T): Unit = {
+      mapping += key -> (get(key) :+ t)
+    }
+
+    def get[T](key: AggregateJob[T]): Seq[T] = {
+      mapping.getOrElse(key, Seq.empty).asInstanceOf[Seq[T]]
+    }
+  }
+
+  def dequeue(): WorkItem[_] = synchronized {
     Scheduler.run()
     val workItem = workItems.dequeue()
     pendingJobs += workItem.id -> PendingJob(workItem, new DateTime)
     workItem
   }
 
-  def addAggregateJob(returnType: WorkItemReturnType, subJobs: JsCode*): AggregateJobId = synchronized {
+  def addAggregateJob[T](returnType: WorkItemReturnType, reduce: Seq[T] => String, subJobs: JsCode*): AggregateJobId = synchronized {
     val aggregateJobId = AggregateJobId(jobCount)
+    val aggregateJob = AggregateJob(aggregateJobId, reduce)
     jobCount += 1
-    val subJobIds = subJobs.map(addJob(_, Some(aggregateJobId), returnType))
-    pendingAggregateJobs += aggregateJobId -> subJobIds.toSet
+    val subJobIds = subJobs.map(addJob(_, Some(aggregateJob), returnType))
+    pendingAggregateJobs += aggregateJob -> subJobIds.toSet
     aggregateJobId
   }
 
-  def addJob(jsCode: String, parent: Option[AggregateJobId], returnType: WorkItemReturnType): JobID = synchronized {
+  def addJob[T](jsCode: String, parent: Option[AggregateJob[T]], returnType: WorkItemReturnType): JobID = synchronized {
     val id = JobID(jobCount)
     jobCount += 1
     workItems.enqueue(WorkItem(id, parent, jsCode, returnType))
@@ -46,40 +58,37 @@ object WorkQueue {
     pendingJobs.get(result.id).foreach { job =>
       results :+= result
       pendingJobs -= result.id
-      updateParentJob(job, result)
+      updateParentJob(job.asInstanceOf[PendingJob[Result]], result)
     }
   }
 
-  private def updateParentJob(completedJob: PendingJob, result: Result): Unit = synchronized {
-    completedJob.jobDefinition.parent.foreach { parentId =>
+  private def updateParentJob[T](completedJob: PendingJob[T], result: T): Unit = synchronized {
+    completedJob.jobDefinition.parent.foreach { parent =>
 
-      //We trust our clients!
-      val results = aggregateJobResults.getOrElse(parentId, Seq.empty)
-      aggregateJobResults = aggregateJobResults.updated(parentId, results :+ result)
+      completedJob.jobDefinition.parent.foreach(parent => aggregateJobResults.insert(parent, result))
 
-
-      val parentJobs = pendingAggregateJobs.get(parentId)
+      val parentJobs = pendingAggregateJobs.get(parent)
       parentJobs.foreach { subJobs =>
         val newSubJobs = subJobs - completedJob.jobDefinition.id
-        pendingAggregateJobs = pendingAggregateJobs.updated(parentId, newSubJobs)
-        if(newSubJobs.isEmpty) completeAggregateJob(parentId)
+        pendingAggregateJobs = pendingAggregateJobs.updated(parent, newSubJobs)
+        if(newSubJobs.isEmpty) completeAggregateJob(parent)
       }
     }
   }
 
-  private def completeAggregateJob(id: AggregateJobId) = synchronized {
-    val subResults = aggregateJobResults.getOrElse(id, Set.empty)
-    println(s"Aggregate job $id completed. Results = " + subResults)
+  private def completeAggregateJob[T](job: AggregateJob[T]) = synchronized {
+    val subResults = aggregateJobResults.get(job)
+    println(s"Aggregate job ${job.id} completed. Results = " + job.reduce(subResults))
   }
 
   def status = JobsStatus(
     workItems.size,
     pendingJobs.size,
     for {
-      (id, pending) <- pendingAggregateJobs.toSeq
+      (aggregateJob, pending) <- pendingAggregateJobs.toSeq
       nPending = pending.size
-      nCompleted = aggregateJobResults.get(id).map(_.size).getOrElse(0)
-    } yield AggregateJobStatus(id, nCompleted, nPending),
+      nCompleted = aggregateJobResults.get(aggregateJob).size
+    } yield AggregateJobStatus(aggregateJob.id, nCompleted, nPending),
     failedJobs,
     results
   )
@@ -101,16 +110,32 @@ object WorkQueue {
   }
 
   private def createMockJobs(): Unit = {
-    addAggregateJob(ReturnOptionalDouble, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
-    addAggregateJob(ReturnDouble, Seq.fill(10)(JavaScripts.estimatePI): _*)
+
+    def primeReducer(results : Seq[OptionalDoubleResult]) : String = {
+      results.seq.flatMap(_.value) match {
+        case Seq() => "No prime found"
+        case xs => s"Found prime ${xs.min}"
+      }
+    }
+
+    def piReducer(results: Seq[DoubleResult]) : String = {
+      val avg = results.map(_.value).sum / results.size
+      s"Pi is more or less $avg"
+    }
+
+    addAggregateJob(ReturnOptionalDouble, primeReducer _, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
+
+    addAggregateJob(ReturnDouble, piReducer _, Seq.fill(10)(JavaScripts.estimatePI): _*)
+
+
     for (i <- 1 to 100) {
       addJob(JavaScripts.estimatePI, None, ReturnDouble)
     }
   }
 }
 
-case class PendingJob(
-  jobDefinition: WorkItem,
+case class PendingJob[T](
+  jobDefinition: WorkItem[T],
   startTime: DateTime
 )
 
