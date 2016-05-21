@@ -1,12 +1,11 @@
 package betterviews
 
-
 import scalatags.Text.all._
 import scalatags.Text.tags2.{title => titleTag}
 
 
 object Main {
-  def apply(title: String)(content: Frag*): String = {
+  def apply(title: String)(content: Modifier*): String = {
     "<!DOCTYPE html>" +
     html(
       head(

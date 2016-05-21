@@ -1,6 +1,6 @@
 package controllers
 
-import shared.{Result, JobID, WorkItem}
+import shared.{JobsStatus, Result, JobID, WorkItem}
 
 object WorkQueue {
   private val workItems = new collection.mutable.Queue[WorkItem]
@@ -67,8 +67,3 @@ object JavaScripts {
     """.stripMargin
 }
 
-case class JobsStatus(
-  workItems: Int,
-  pendingJobs: Int,
-  results: Seq[Result]
-)
