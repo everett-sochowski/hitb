@@ -56,13 +56,21 @@ object WorkQueue {
     id
   }
 
-  //hackity hack
   def runLeftPad(str: String, len: Int): Future[String] = {
+    aggregateStringJobFuture(strs => strs.map(_.value).mkString(""), JavaScripts.leftPad(str, len))
+  }
+
+  def rot13(str: String): Future[String] = {
+    aggregateStringJobFuture(strs => strs.map(_.value).mkString(""), str.grouped(10).map(JavaScripts.rot13).toSeq: _*)
+  }
+
+  //hackity hack
+  def aggregateStringJobFuture(aggregate: Seq[StringResult] => String, subJobs: JsCode*) : Future[String] = {
     val promise = Promise[String]
     val onComplete = (strs : Seq[StringResult]) => {
-      promise.trySuccess(strs.head.value) : Unit
+      promise.trySuccess(aggregate(strs)) : Unit
     }
-    addAggregateJob[StringResult](ReturnString, strs => strs.head.value, Some(onComplete), JavaScripts.leftPad(str, len))
+    addAggregateJob[StringResult](ReturnString, strs => strs.map(_.value).mkString(""), Some(onComplete), subJobs: _*)
     promise.future
   }
 
@@ -140,6 +148,7 @@ object WorkQueue {
     }
 
     addJob(JavaScripts.leftPad(s"hello", 8), None, ReturnString)
+    addJob(JavaScripts.rot13(s"hello"), None, ReturnString)
 
     addAggregateJob(ReturnOptionalDouble, primeReducer _, None, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
 
@@ -245,6 +254,17 @@ object JavaScripts {
        |var padded = ${char.fold(s"leftPad('$str', $len);")(c => s"leftPad('$str', $len, '$char');")}
        |console.log("Calculation finished: " + padded);
        |padded
+     """.stripMargin
+
+  def rot13(str: String) =
+    s"""
+       |function rot13(str) {
+       | return str.replace(/[a-zA-Z]/g,function(c){return String.fromCharCode((c<="Z"?90:122)>=(c=c.charCodeAt(0)+13)?c:c-26);});
+       |}
+       |console.log("Calculation Started -- ROT13");
+       |var result = rot13('$str');
+       |console.log("Calculation finished: " + result);
+       |result;
      """.stripMargin
 }
 

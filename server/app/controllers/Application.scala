@@ -11,6 +11,7 @@ import upickle.default._
 
 class Application()(implicit environment: Environment) extends Controller {
 
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   def index = Action {
     Ok(IndexView.static()).as("text/html")
@@ -31,9 +32,14 @@ class Application()(implicit environment: Environment) extends Controller {
   }
 
   def leftPad(str: String, len: Int) = Action.async {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    WorkQueue.runLeftPad(str, len).map(result => Ok(s"{your left padded string: $result}").as("application/json"))
+    WorkQueue.runLeftPad(str, len).map(jsonResult)
   }
+
+  def rot13(str: String) = Action.async {
+    WorkQueue.rot13(str).map(jsonResult)
+  }
+
+  def jsonResult(result: String) = Ok(s"{result: $result}").as("application/json")
 
   def statusPage = Action {
     Ok(StatusPageView.dynamic()).as("text/html")
