@@ -1,6 +1,6 @@
 import sbt.Project.projectToRef
 
-lazy val clients = Seq(client)
+lazy val clients = Seq(client, clientWorker)
 lazy val scalaV = "2.11.8"
 
 lazy val server = (project in file("server")).settings(
@@ -27,6 +27,17 @@ lazy val client = (project in file("client")).settings(
   libraryDependencies ++= Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0"
   )
+).enablePlugins(ScalaJSPlugin, ScalaJSPlay).
+  dependsOn(sharedJs)
+
+lazy val clientWorker = (project in file("clientWorker")).settings(
+  scalaVersion := scalaV,
+  persistLauncher := true,
+  persistLauncher in Test := false,
+  libraryDependencies ++= Seq(
+    "org.scala-js" %%% "scalajs-dom" % "0.8.0"
+  ),
+  scalaJSOutputWrapper := ("", "hitb.Worker().main();")
 ).enablePlugins(ScalaJSPlugin, ScalaJSPlay).
   dependsOn(sharedJs)
 
