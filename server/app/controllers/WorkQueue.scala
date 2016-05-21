@@ -1,6 +1,6 @@
 package controllers
 
-import shared.{JobsStatus, Result, JobID, WorkItem}
+import shared._
 
 object WorkQueue {
   private val workItems = new collection.mutable.Queue[WorkItem]
@@ -17,10 +17,10 @@ object WorkQueue {
     workItem
   }
 
-  def addJob(jsCode: String): JobID = synchronized {
+  def addDoubleJob(jsCode: String): JobID = synchronized {
     val id = JobID(jobCount)
     jobCount += 1
-    workItems.enqueue(WorkItem(id, jsCode))
+    workItems.enqueue(ReturnDoubleWorkItem(id, jsCode))
     id
   }
 
@@ -40,7 +40,7 @@ object WorkQueue {
 
   private def createMockJobs(): Unit = {
     for (i <- 1 to 100) {
-      addJob(JavaScripts.estimatePI)
+      addDoubleJob(JavaScripts.estimatePI)
     }
   }
 }
