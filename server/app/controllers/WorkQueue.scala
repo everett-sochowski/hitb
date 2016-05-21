@@ -6,9 +6,9 @@ import shared.Shared.JsCode
 import shared.{JobID, JobsStatus, Result, WorkItem}
 
 object WorkQueue {
-  val DefaultTimeoutMillis = 20000
+  val DefaultTimeoutMillis = 10000
 
-  private val workItems = new collection.mutable.Queue[WorkItem[_]]
+  private var workItems = new collection.mutable.Queue[WorkItem[_]]
   private var pendingJobs = Map.empty[JobID, PendingJob[_]]
   private var pendingAggregateJobs = Map.empty[AggregateJob[_], Set[JobID]]
   private var results = Seq.empty[Result]
@@ -56,10 +56,12 @@ object WorkQueue {
 
   def completeJob(result: Result): Unit = synchronized {
     println(s"Received result: $result")
-    pendingJobs.get(result.id).foreach { job =>
-      results :+= result
-      pendingJobs -= result.id
-      updateParentJob(job.asInstanceOf[PendingJob[Result]], result)
+    if (pendingJobs.contains(result.id)) {
+      pendingJobs.get(result.id).foreach { job =>
+        results :+= result
+        pendingJobs -= result.id
+        updateParentJob(job.asInstanceOf[PendingJob[Result]], result)
+      }
     }
   }
 
@@ -104,13 +106,10 @@ object WorkQueue {
         pending <- pendingJobs.values
         elapsedMs = new Interval(pending.startTime, timeNow).toDurationMillis
         if elapsedMs >= DefaultTimeoutMillis
-      } yield pending
+      } yield pending.jobDefinition
 
-    for (PendingJob(workItem, _) <- requireRestart) {
-      pendingJobs -= workItem.id
-      workItems.enqueue(workItem)
-      failedJobs += 1
-    }
+    failedJobs += requireRestart.size
+    workItems = collection.mutable.Queue[WorkItem[_]](requireRestart.toSeq ++ workItems.toSeq: _*)
   }
 
   private def createMockJobs(): Unit = {
