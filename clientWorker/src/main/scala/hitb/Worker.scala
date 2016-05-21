@@ -32,8 +32,5 @@ object Worker extends js.JSApp {
   private def postResult(workItem: WorkItem, computationResult: Double) = {
     val result = Result(workItem.id, computationResult)
     Ajax.post("/postResult", write(result))
-
-    val xhr = new dom.XMLHttpRequest()
-    xhr.open("POST", "/postResult")
   }
 }
