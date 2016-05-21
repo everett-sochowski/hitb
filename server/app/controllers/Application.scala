@@ -1,6 +1,6 @@
 package controllers
 
-import betterviews.StatusPage
+import betterviews.StatusPageView
 import play.api.Environment
 import play.api.mvc._
 import shared.{Result, Functions}
@@ -17,7 +17,7 @@ class Application()(implicit environment: Environment) extends Controller {
   }
 
   def statusPage = Action {
-    Ok(StatusPage.view()).as("text/html")
+    Ok(StatusPageView.dynamic()).as("text/html")
   }
 
   def statusJSON = Action {
