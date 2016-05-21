@@ -6,6 +6,7 @@ case object ReturnOptionalDouble extends WorkItemReturnType
 
 case class WorkItem(
   id: JobID,
+  parent: Option[AggregateJobId],
   jsCode: String,
   returnType: WorkItemReturnType
 )
@@ -25,4 +26,9 @@ case class OptionalDoubleResult(
 ) extends Result
 
 case class JobID(value: Long) extends AnyVal
+case class AggregateJobId(value: Long) extends AnyVal
+
+object Shared {
+  type JsCode = String
+}
 

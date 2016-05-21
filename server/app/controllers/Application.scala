@@ -32,7 +32,7 @@ class Application()(implicit environment: Environment) extends Controller {
 
   def createJob = Action { implicit request =>
       val jsCode = request.body.asText.get
-      WorkQueue.addJob(jsCode, ReturnDouble) //TODO: support other return types
+      WorkQueue.addJob(jsCode, None, ReturnDouble) //TODO: support other return types
       Ok
   }
 }

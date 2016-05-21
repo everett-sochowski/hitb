@@ -1,15 +1,18 @@
 package controllers
 
 import shared._
-import org.joda.time.{Interval, DateTime}
-import shared.{JobsStatus, Result, JobID, WorkItem}
+import org.joda.time.{DateTime, Interval}
+import shared.Shared.JsCode
+import shared.{JobID, JobsStatus, Result, WorkItem}
 
 object WorkQueue {
   val DefaultTimeoutMillis = 20000
 
   private val workItems = new collection.mutable.Queue[WorkItem]
   private var pendingJobs = Map.empty[JobID, PendingJob]
+  private var pendingAggregateJobs = Map.empty[AggregateJobId, Set[JobID]]
   private var results = Seq.empty[Result]
+  private var aggregateJobResults = Map.empty[AggregateJobId, Seq[Result]]
   private var jobCount = 0L
   private var failedJobs = 0
 
@@ -23,19 +26,50 @@ object WorkQueue {
     workItem
   }
 
-  def addJob(jsCode: String, returnType: WorkItemReturnType): JobID = synchronized {
+  def addAggregateJob(returnType: WorkItemReturnType, subJobs: JsCode*): AggregateJobId = synchronized {
+    val aggregateJobId = AggregateJobId(jobCount)
+    jobCount += 1
+    val subJobIds = subJobs.map(addJob(_, Some(aggregateJobId), returnType))
+    pendingAggregateJobs += aggregateJobId -> subJobIds.toSet
+    aggregateJobId
+  }
+
+  def addJob(jsCode: String, parent: Option[AggregateJobId], returnType: WorkItemReturnType): JobID = synchronized {
     val id = JobID(jobCount)
     jobCount += 1
-    workItems.enqueue(WorkItem(id, jsCode, returnType))
+    workItems.enqueue(WorkItem(id, parent, jsCode, returnType))
     id
   }
 
   def completeJob(result: Result): Unit = synchronized {
     println(s"Received result: $result")
-    if (pendingJobs.contains(result.id)) {
+    pendingJobs.get(result.id).foreach { job =>
       results :+= result
       pendingJobs -= result.id
+      updateParentJob(job, result)
     }
+  }
+
+  private def updateParentJob(completedJob: PendingJob, result: Result): Unit = synchronized {
+    completedJob.jobDefinition.parent.foreach { parentId =>
+
+      //We trust our clients!
+      val results = aggregateJobResults.getOrElse(parentId, Seq.empty)
+      aggregateJobResults = aggregateJobResults.updated(parentId, results :+ result)
+
+
+      val parentJobs = pendingAggregateJobs.get(parentId)
+      parentJobs.foreach { subJobs =>
+        val newSubJobs = subJobs - completedJob.jobDefinition.id
+        pendingAggregateJobs = pendingAggregateJobs.updated(parentId, newSubJobs)
+        if(newSubJobs.isEmpty) completeAggregateJob(parentId)
+      }
+    }
+  }
+
+  private def completeAggregateJob(id: AggregateJobId) = synchronized {
+    val subResults = aggregateJobResults.getOrElse(id, Set.empty)
+    println(s"Aggregate job $id completed. Results = " + subResults)
   }
 
   def status = JobsStatus(
@@ -62,10 +96,9 @@ object WorkQueue {
   }
 
   private def createMockJobs(): Unit = {
-    addJob(JavaScripts.nextPrimeFinder(101918, 101920), ReturnOptionalDouble) //no primes in this range
-    addJob(JavaScripts.nextPrimeFinder(101918, 101921), ReturnOptionalDouble) //101921 is prime
+    addAggregateJob(ReturnOptionalDouble, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
     for (i <- 1 to 100) {
-      addJob(JavaScripts.estimatePI, ReturnDouble)
+      addJob(JavaScripts.estimatePI, None, ReturnDouble)
     }
   }
 }
