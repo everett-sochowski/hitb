@@ -1,6 +1,6 @@
 package betterviews
 
-import shared.{DoubleResult, JobsStatus, Result}
+import shared.{DoubleResult, JobsStatus, OptionalDoubleResult, Result}
 
 import scalatags.Text.all._
 
@@ -11,7 +11,11 @@ object StatusPageView {
   def dynamic() = Main("Status")(onload:="scripts.StatusPage().run()")
 
   def resultLi(r: Result) = r match {
-    case DoubleResult(id, value) => li(s"Job ${id.value}: ${value}")
+    case DoubleResult(id, value) =>
+      li(s"Job ${id.value}: ${value}")
+    case OptionalDoubleResult(id, value) =>
+      val formattedValue = value.fold("No result found")(_.toString)
+      li(s"Job ${id.value}: $formattedValue")
   }
 
   def content(status: JobsStatus) = div(

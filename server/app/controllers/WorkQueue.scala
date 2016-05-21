@@ -17,10 +17,10 @@ object WorkQueue {
     workItem
   }
 
-  def addDoubleJob(jsCode: String): JobID = synchronized {
+  def addJob(jsCode: String, returnType: WorkItemReturnType): JobID = synchronized {
     val id = JobID(jobCount)
     jobCount += 1
-    workItems.enqueue(WorkItem(id, jsCode, ReturnDouble))
+    workItems.enqueue(WorkItem(id, jsCode, returnType))
     id
   }
 
@@ -39,15 +39,18 @@ object WorkQueue {
   )
 
   private def createMockJobs(): Unit = {
+    addJob(JavaScripts.nextPrimeFinder(101918, 101920), ReturnOptionalDouble) //no primes in this range
+    addJob(JavaScripts.nextPrimeFinder(101918, 101921), ReturnOptionalDouble) //101921 is prime
     for (i <- 1 to 100) {
-      addDoubleJob(JavaScripts.estimatePI)
+      addJob(JavaScripts.estimatePI, ReturnDouble)
     }
   }
 }
 
 object JavaScripts {
+
   val estimatePI =
-    """console.log("Calculation Started");
+    """console.log("Calculation Started -- Estimate Pi");
       |var r = 5;
       |var points_total = 0;
       |var points_inside = 0;
@@ -64,6 +67,30 @@ object JavaScripts {
       |}
       |console.log("Calculation finished");
       |4 * points_inside / points_total;
+    """.stripMargin
+
+
+  def nextPrimeFinder(searchStart: Long, searchEnd: Long) =
+    s"""console.log("Calculation Started -- Next Prime");
+      |function isPrime(n) {
+      |  var halfN = Math.ceil(n / 2);
+      |  for(i = 2; i < halfN; i++) {
+      |    if(n % i === 0) return false;
+      |  }
+      |  return true;
+      |}
+      |
+      |function nextPrime(searchStart, searchEnd) {
+      |  for(j = searchStart; j <= searchEnd; j++) {
+      |    if(isPrime(j)) return j;
+      |  }
+      |  return null;
+      |}
+      |
+      |var next = nextPrime($searchStart, $searchEnd);
+      |console.log("next prime in range: " + next);
+      |console.log("Calculation finished");
+      |next;
     """.stripMargin
 }
 

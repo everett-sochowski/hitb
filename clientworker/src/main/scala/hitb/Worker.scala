@@ -29,14 +29,13 @@ object Worker extends js.JSApp {
         val computationResult = js.eval(workItem.jsCode)
 
         workItem.returnType match {
-          case ReturnDouble => postDoubleResult(workItem, computationResult.asInstanceOf[Double])
+          case ReturnDouble => postResult(DoubleResult(workItem.id, computationResult.asInstanceOf[Double]))
+          case ReturnOptionalDouble => postResult(OptionalDoubleResult(workItem.id, Option(computationResult.asInstanceOf[Double])))
         }
       }
   }
 
-  private def postDoubleResult(workItem: WorkItem, computationResult: Double) = {
-    val result = DoubleResult(workItem.id, computationResult)
-    self.postMessage(result.asInstanceOf[scala.scalajs.js.Any])
+  private def postResult[T: Writer](result: T) = {
     Ajax.post("/postResult", write(result))
   }
 }

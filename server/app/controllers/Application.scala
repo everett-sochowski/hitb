@@ -3,7 +3,7 @@ package controllers
 import betterviews.StatusPageView
 import play.api.Environment
 import play.api.mvc._
-import shared.{Result, Functions}
+import shared.{Functions, Result, ReturnDouble}
 import upickle.default._
 
 class Application()(implicit environment: Environment) extends Controller {
@@ -32,7 +32,7 @@ class Application()(implicit environment: Environment) extends Controller {
 
   def createJob = Action { implicit request =>
       val jsCode = request.body.asText.get
-      WorkQueue.addDoubleJob(jsCode) //TODO: support other kinds
+      WorkQueue.addJob(jsCode, ReturnDouble) //TODO: support other return types
       Ok
   }
 }
