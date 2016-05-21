@@ -5,7 +5,7 @@ import org.joda.time.{Interval, DateTime}
 import shared.{JobsStatus, Result, JobID, WorkItem}
 
 object WorkQueue {
-  val DefaultTimeoutMillis = 5000
+  val DefaultTimeoutMillis = 20000
 
   private val workItems = new collection.mutable.Queue[WorkItem]
   private var pendingJobs = Map.empty[JobID, PendingJob]
