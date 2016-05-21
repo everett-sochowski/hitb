@@ -51,7 +51,7 @@ object JavaScripts {
       |var r = 5;
       |var points_total = 0;
       |var points_inside = 0;
-      |var iterations = 100000000;
+      |var iterations = 10000000;
       |
       |while (points_total < iterations) {
       |  points_total++;
@@ -62,9 +62,8 @@ object JavaScripts {
       |  if (Math.pow(x, 2) + Math.pow(y, 2) < Math.pow(r, 2))
       |    points_inside++;
       |}
-      |
-      |4 * points_inside / points_total;
       |console.log("Calculation finished");
+      |4 * points_inside / points_total;
     """.stripMargin
 }
 

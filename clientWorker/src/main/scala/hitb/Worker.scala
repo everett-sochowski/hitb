@@ -1,8 +1,12 @@
 package hitb
 
 import org.scalajs.dom
-import shared.WorkItem
+import org.scalajs.dom.ext.Ajax
+import shared.{Result, WorkItem}
 import upickle.default._
+
+import scala.concurrent._
+import ExecutionContext.Implicits.global
 
 import scala.scalajs.js
 
@@ -12,19 +16,24 @@ object Worker extends js.JSApp {
   def main(): Unit = {
     println("in scalajs worker")
 
-    val xhr = new dom.XMLHttpRequest()
-    xhr.open("GET",
-      "/getWorkItem"
-    )
-    xhr.onload = { (e: dom.Event) =>
-      if (xhr.status == 200) {
-          val workItem = read[WorkItem](xhr.responseText)
-          js.eval(workItem.jsCode)
-      } else {
-        dom.document.getElementById("scalajsShoutOut").innerHTML =
-          xhr.responseText
+    this.processNextWorkItem()
+  }
+
+  private def processNextWorkItem() = {
+    Ajax
+      .get("/getWorkItem")
+      .onSuccess { case xhr =>
+        val workItem = read[WorkItem](xhr.responseText)
+        val computationResult = js.eval(workItem.jsCode).asInstanceOf[Double]
+        this.postResult(workItem, computationResult)
       }
-    }
-    xhr.send()
+  }
+
+  private def postResult(workItem: WorkItem, computationResult: Double) = {
+    val result = Result(workItem.id, computationResult)
+    Ajax.post("/postResult", write(result))
+
+    val xhr = new dom.XMLHttpRequest()
+    xhr.open("POST", "/postResult")
   }
 }
