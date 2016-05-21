@@ -1,6 +1,6 @@
 package controllers
 
-import betterviews.StatusPageView
+import betterviews.{IndexView, StatusPageView}
 import play.api.Environment
 import play.api.mvc._
 import shared.{Functions, Result, ReturnDouble}
@@ -9,7 +9,7 @@ import upickle.default._
 class Application()(implicit environment: Environment) extends Controller {
 
   def index = Action {
-    Ok(views.html.index(Functions.f1(5)))
+    Ok(IndexView.static()).as("text/html")
   }
 
   def getWorkItem = Action {
