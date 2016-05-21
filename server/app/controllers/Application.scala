@@ -2,7 +2,7 @@ package controllers
 
 import play.api.Environment
 import play.api.mvc._
-import shared.Functions
+import shared.{Result, Functions}
 import upickle.default._
 
 class Application()(implicit environment: Environment) extends Controller {
@@ -13,6 +13,12 @@ class Application()(implicit environment: Environment) extends Controller {
 
   def getWorkItem = Action {
     Ok(write(WorkQueue.dequeue())).as("application/json")
+  }
+
+  def postResult = Action { implicit request =>
+    val result = read[Result](request.body.asText.get)
+    WorkQueue.completeJob(result)
+    Ok
   }
 }
 
