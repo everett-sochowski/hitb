@@ -1,6 +1,6 @@
 package betterviews
 
-import shared.JobsStatus
+import shared.{DoubleResult, JobsStatus, Result}
 
 import scalatags.Text.all._
 
@@ -9,6 +9,10 @@ object StatusPageView {
   def static(status: JobsStatus): String = Main("Status")(content(status))
 
   def dynamic() = Main("Status")(onload:="scripts.StatusPage().run()")
+
+  def resultLi(r: Result) = r match {
+    case DoubleResult(id, value) => li(s"Job ${id.value}: ${value}")
+  }
 
   def content(status: JobsStatus) = div(
     h1("Status"),
@@ -19,7 +23,7 @@ object StatusPageView {
     p(
       ul(
         for (result <- status.results)
-          yield li(s"Job ${result.id.value}: ${result.value}")
+          yield resultLi(result)
       )
     )
   )
