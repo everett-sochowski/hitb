@@ -32,7 +32,10 @@ lazy val client = (project in file("client")).settings(
 
 lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared")).
   settings(
-    scalaVersion := scalaV
+    scalaVersion := scalaV,
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "upickle" % "0.4.0"
+    )
   ).
   jsConfigure(_ enablePlugins ScalaJSPlay)
 
