@@ -20,7 +20,7 @@ object WorkQueue {
   def addDoubleJob(jsCode: String): JobID = synchronized {
     val id = JobID(jobCount)
     jobCount += 1
-    workItems.enqueue(ReturnDoubleWorkItem(id, jsCode))
+    workItems.enqueue(WorkItem(id, jsCode, ReturnDouble))
     id
   }
 

@@ -1,14 +1,13 @@
 package shared
 
-sealed trait WorkItem {
-  val id: JobID
-  val jsCode: String
-}
+sealed trait WorkItemReturnType
+case object ReturnDouble extends WorkItemReturnType
 
-case class ReturnDoubleWorkItem(
+case class WorkItem(
   id: JobID,
-  jsCode: String
-) extends WorkItem
+  jsCode: String,
+  returnType: WorkItemReturnType
+)
 
 sealed trait Result {
   val id: JobID

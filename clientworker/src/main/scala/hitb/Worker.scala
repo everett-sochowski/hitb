@@ -2,7 +2,7 @@ package hitb
 
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
-import shared.{DoubleResult, Result, ReturnDoubleWorkItem, WorkItem}
+import shared._
 import upickle.default._
 
 import scala.concurrent._
@@ -26,8 +26,8 @@ object Worker extends js.JSApp {
 
         val computationResult = js.eval(workItem.jsCode)
 
-        workItem match {
-          case d: ReturnDoubleWorkItem => postDoubleResult(workItem, computationResult.asInstanceOf[Double])
+        workItem.returnType match {
+          case ReturnDouble => postDoubleResult(workItem, computationResult.asInstanceOf[Double])
         }
       }
   }
