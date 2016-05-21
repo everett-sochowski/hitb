@@ -1,5 +1,6 @@
 package controllers
 
+import betterviews.StatusPage
 import play.api.Environment
 import play.api.mvc._
 import shared.{Result, Functions}
@@ -13,6 +14,14 @@ class Application()(implicit environment: Environment) extends Controller {
 
   def getWorkItem = Action {
     Ok(write(WorkQueue.dequeue())).as("application/json")
+  }
+
+  def statusPage = Action {
+    Ok(StatusPage.view()).as("text/html")
+  }
+
+  def statusJSON = Action {
+    Ok(write(WorkQueue.status)).as("application/json")
   }
 
   def postResult = Action { implicit request =>

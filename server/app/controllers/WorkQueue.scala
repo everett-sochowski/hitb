@@ -28,6 +28,12 @@ object WorkQueue {
     }
   }
 
+  def status = JobsStatus(
+    workItems.size,
+    pendingJobs.size,
+    results
+  )
+
   private def createMockJobs(): Unit = {
     for (i <- 1 to 100) {
       addJob(JobID(i), JavaScripts.estimatePI)
@@ -58,3 +64,8 @@ object JavaScripts {
     """.stripMargin
 }
 
+case class JobsStatus(
+  workItems: Int,
+  pendingJobs: Int,
+  results: Seq[Result]
+)
