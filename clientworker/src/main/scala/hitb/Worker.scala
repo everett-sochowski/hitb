@@ -33,7 +33,7 @@ object Worker extends js.JSApp {
 
             workItem.returnType match {
               case ReturnDouble => postResult(DoubleResult(workItem.id, computationResult.asInstanceOf[Double]))
-              case ReturnOptionalDouble => postResult(OptionalDoubleResult(workItem.id, Option(computationResult.asInstanceOf[Double])))
+              case ReturnOptionalDouble => postResult(OptionalDoubleResult(workItem.id, Option(computationResult).map(_.asInstanceOf[Double])))
             }
           }
           case HttpCodes.NO_CONTENT => println("No work to do ...")
