@@ -24,13 +24,19 @@ object Worker extends js.JSApp {
     Ajax
       .get("/getWorkItem")
       .onSuccess { case xhr =>
-        val workItem = read[WorkItem](xhr.responseText)
 
-        val computationResult = js.eval(workItem.jsCode)
+        xhr.status match {
+          case HttpCodes.OK => {
+            val workItem = read[WorkItem](xhr.responseText)
 
-        workItem.returnType match {
-          case ReturnDouble => postResult(DoubleResult(workItem.id, computationResult.asInstanceOf[Double]))
-          case ReturnOptionalDouble => postResult(OptionalDoubleResult(workItem.id, Option(computationResult.asInstanceOf[Double])))
+            val computationResult = js.eval(workItem.jsCode)
+
+            workItem.returnType match {
+              case ReturnDouble => postResult(DoubleResult(workItem.id, computationResult.asInstanceOf[Double]))
+              case ReturnOptionalDouble => postResult(OptionalDoubleResult(workItem.id, Option(computationResult.asInstanceOf[Double])))
+            }
+          }
+          case HttpCodes.NO_CONTENT => println("No work to do ...")
         }
       }
   }

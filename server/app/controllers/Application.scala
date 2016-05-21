@@ -1,19 +1,33 @@
 package controllers
 
+import java.util.NoSuchElementException
+
 import betterviews.{IndexView, StatusPageView}
 import play.api.Environment
+import play.api.http.HttpEntity
 import play.api.mvc._
 import shared.{Functions, Result, ReturnDouble}
 import upickle.default._
 
 class Application()(implicit environment: Environment) extends Controller {
 
+
   def index = Action {
     Ok(IndexView.static()).as("text/html")
   }
 
   def getWorkItem = Action {
-    Ok(write(WorkQueue.dequeue())).as("application/json")
+    try {
+      val workItem = WorkQueue.dequeue()
+      Ok(write(workItem)).as("application/json")
+    } catch {
+      case e: NoSuchElementException => {
+        Result(
+          header = ResponseHeader(NO_CONTENT, Map.empty),
+          body = HttpEntity.NoEntity
+        )
+      }
+    }
   }
 
   def statusPage = Action {
