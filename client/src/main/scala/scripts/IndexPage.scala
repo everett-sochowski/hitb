@@ -19,7 +19,7 @@ object IndexPage extends js.JSApp {
     
     worker.onmessage = { e: Any =>
       val messageEvent = e.asInstanceOf[MessageEvent]
-      val result = read[DoubleResult](messageEvent.data.toString)
+      val result = read[Result](messageEvent.data.toString)
       this.addJobIdToWorklist(result.id)
       // worker finished, start off next one
       worker.postMessage({})
