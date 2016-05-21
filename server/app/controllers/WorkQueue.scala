@@ -37,7 +37,8 @@ object WorkQueue {
 
 object JavaScripts {
   val estimatePI =
-    """var r = 5;
+    """console.log("Calculation Started");
+      |var r = 5;
       |var points_total = 0;
       |var points_inside = 0;
       |var iterations = 100000000;
@@ -53,6 +54,7 @@ object JavaScripts {
       |}
       |
       |4 * points_inside / points_total;
+      |console.log("Calculation finished");
     """.stripMargin
 }
 
