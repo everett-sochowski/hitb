@@ -18,9 +18,8 @@ object StatusPageView {
     h2("Results"),
     p(
       ul(
-        for (result <- status.results) {
-          li(result.toString)
-        }
+        for (result <- status.results)
+          yield li(s"Job ${result.id.value}: ${result.value}")
       )
     )
   )
