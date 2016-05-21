@@ -1,6 +1,5 @@
 package hitb
 
-import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
 import shared._
 import upickle.default._

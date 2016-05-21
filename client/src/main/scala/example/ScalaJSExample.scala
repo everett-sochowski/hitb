@@ -1,6 +1,6 @@
 package example
 
-import org.scalajs.dom.{MessageEvent, Worker}
+import org.scalajs.dom.Worker
 
 import scala.scalajs.js
 
