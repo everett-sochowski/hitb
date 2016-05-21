@@ -75,6 +75,11 @@ object WorkQueue {
   def status = JobsStatus(
     workItems.size,
     pendingJobs.size,
+    for {
+      (id, pending) <- pendingAggregateJobs.toSeq
+      nPending = pending.size
+      nCompleted = aggregateJobResults.get(id).map(_.size).getOrElse(0)
+    } yield AggregateJobStatus(id, nCompleted, nPending),
     failedJobs,
     results
   )
@@ -97,6 +102,7 @@ object WorkQueue {
 
   private def createMockJobs(): Unit = {
     addAggregateJob(ReturnOptionalDouble, JavaScripts.nextPrimeFinder(101918, 101920), JavaScripts.nextPrimeFinder(101921, 101922))
+    addAggregateJob(ReturnDouble, Seq.fill(10)(JavaScripts.estimatePI): _*)
     for (i <- 1 to 100) {
       addJob(JavaScripts.estimatePI, None, ReturnDouble)
     }
