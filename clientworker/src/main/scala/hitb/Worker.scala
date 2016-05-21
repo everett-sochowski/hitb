@@ -36,6 +36,7 @@ object Worker extends js.JSApp {
   }
 
   private def postResult[T: Writer](result: T) = {
+    self.postMessage(write(result))
     Ajax.post("/postResult", write(result))
   }
 }
