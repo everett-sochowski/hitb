@@ -2,23 +2,25 @@ package example
 
 import scala.scalajs.js
 import org.scalajs.dom
+import org.scalajs.dom.raw.ErrorEvent
 import shared.{Functions, SharedMessages}
 
 object ScalaJSExample extends js.JSApp {
   def main(): Unit = {
-    dom.document.getElementById("scalajsShoutOut").textContent = {
 
-      /*import scala.spores._
-
-      val foo = spore {
-        x : Int => x + 1
+    val xhr = new dom.XMLHttpRequest()
+    xhr.open("GET",
+      "/test"
+    )
+    xhr.onload = { (e: dom.Event) =>
+      if (xhr.status == 200) {
+        dom.document.getElementById("scalajsShoutOut").textContent =
+          xhr.responseText
+      } else {
+        dom.document.getElementById("scalajsShoutOut").innerHTML =
+          xhr.responseText
       }
-
-      foo(5).toString*/
-
-      Functions.f1(5)
-
-      //SharedMessages.itWorks
     }
+    xhr.send()
   }
 }
