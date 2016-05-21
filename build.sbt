@@ -1,6 +1,6 @@
 import sbt.Project.projectToRef
 
-lazy val clients = Seq(client, clientWorker)
+lazy val clients = Seq(client, clientworker)
 lazy val scalaV = "2.11.8"
 
 lazy val server = (project in file("server")).settings(
@@ -30,7 +30,7 @@ lazy val client = (project in file("client")).settings(
 ).enablePlugins(ScalaJSPlugin, ScalaJSPlay).
   dependsOn(sharedJs)
 
-lazy val clientWorker = (project in file("clientWorker")).settings(
+lazy val clientworker = (project in file("clientworker")).settings(
   scalaVersion := scalaV,
   persistLauncher := true,
   persistLauncher in Test := false,

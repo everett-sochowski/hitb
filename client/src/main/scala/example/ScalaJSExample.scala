@@ -8,6 +8,6 @@ object ScalaJSExample extends js.JSApp {
   def main(): Unit = {
 
     println("running main")
-    new Worker("/assets/clientWorker-fastopt.js")
+    new Worker("/assets/clientworker-fastopt.js")
   }
 }
