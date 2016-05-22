@@ -16,9 +16,12 @@ POST        /postResult          controllers.Application.postResult
 
 POST        /createJob           controllers.Application.createJob
 
-GET         /leftPad             controllers.Application.leftPad(str: String, len: Int)
 
-GET         /rot13               controllers.Application.rot13(str: String)
+# API
+
+GET         /api/leftPad             controllers.Application.leftPad(str: String, len: Int)
+
+GET         /api/rot13               controllers.Application.rot13(str: String)
 
 
 # Map static resources from the /public folder to the /assets URL path
