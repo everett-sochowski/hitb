@@ -32,11 +32,11 @@ class Application()(implicit environment: Environment) extends Controller {
   }
 
   def leftPad(str: String, len: Int) = Action.async {
-    WorkQueue.runLeftPad(str, len).map(jsonResult)
+    WorkQueue.runLeftPad(str, len, highPriority = true).map(jsonResult)
   }
 
   def rot13(str: String) = Action.async {
-    WorkQueue.rot13(str).map(jsonResult)
+    WorkQueue.rot13(str, highPriority = true).map(jsonResult)
   }
 
   def jsonResult(result: String) = Ok(s"{result: $result}").as("application/json")
